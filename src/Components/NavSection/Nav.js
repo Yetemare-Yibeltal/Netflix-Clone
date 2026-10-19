@@ -61,7 +61,7 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
         </button>
 
         <nav className="nav-links" aria-label="Main navigation">
-          {["Home", "TV Shows", "Movies"].map((page) => (
+          {["Home", "TV Shows", "Movies", "New & Popular"].map((page) => (
             <button
               key={page}
               type="button"
@@ -73,6 +73,35 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
             </button>
           ))}
         </nav>
+        <div className="nav-genres">
+          <label htmlFor="nav-genre">Browse Genres</label>
+          <select
+            id="nav-genre"
+            defaultValue=""
+            onChange={(event) => {
+              if (event.target.value && onNavigate) {
+                onNavigate(`Genre:${event.target.value}`);
+              }
+            }}
+          >
+            <option value="" disabled>
+              Genres
+            </option>
+            <option value="28">Action</option>
+            <option value="12">Adventure</option>
+            <option value="16">Animation</option>
+            <option value="35">Comedy</option>
+            <option value="80">Crime</option>
+            <option value="99">Documentary</option>
+            <option value="18">Drama</option>
+            <option value="14">Fantasy</option>
+            <option value="27">Horror</option>
+            <option value="9648">Mystery</option>
+            <option value="10749">Romance</option>
+            <option value="878">Science Fiction</option>
+            <option value="53">Thriller</option>
+          </select>
+        </div>
 
         <div className="nav-actions">
           <div className={`nav-search ${searchOpen ? "search-open" : ""}`}>
