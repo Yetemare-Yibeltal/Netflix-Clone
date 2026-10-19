@@ -1,33 +1,122 @@
-import React, { useEffect, useState } from "react";
-import "../NavSection/Nav.css";
 
-function Nav() {
-  const [show, handleShow] = useState(false);
+import React, { useEffect, useState } from "react";
+import { Search, X, Film, Bookmark } from "lucide-react";
+import "./Nav.css";
+
+function Nav({ onSearch, onNavigate, activePage = "Home" }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 100) {
-        handleShow(true);
-      } else {
-        handleShow(false);
-      }
+      setScrolled(window.scrollY > 24);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (!onSearch) return;
+
+    const timer = window.setTimeout(() => {
+      onSearch(searchTerm.trim());
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [searchTerm, onSearch]);
+
+  const navigate = (page) => {
+    if (onNavigate) {
+      onNavigate(page);
+    }
+  };
+
+  const toggleSearch = () => {
+    setSearchOpen((open) => {
+      if (open) {
+        setSearchTerm("");
+        if (onSearch) onSearch("");
+      }
+      return !open;
+    });
+  };
+
   return (
-    <div className={`nav ${show && "nav-black"}`}>
-      <img
-        className="nav-logo"
-        src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Logonetflix.png"
-      ></img>
-      <img
-        className="nav-avatar"
-        src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/atlassian-rovo-icon.png"
-      ></img>
-    </div>
+    <header className={`nav ${scrolled ? "nav-black" : ""}`}>
+      <div className="nav-inner">
+        <button
+          className="nav-brand"
+          type="button"
+          onClick={() => navigate("Home")}
+          aria-label="Go to home"
+        >
+          <span className="nav-brand-mark">N</span>
+          <span className="nav-brand-name">STREAMFLIX</span>
+        </button>
+
+        <nav className="nav-links" aria-label="Main navigation">
+          {["Home", "TV Shows", "Movies"].map((page) => (
+            <button
+              key={page}
+              type="button"
+              className={`nav-link ${activePage === page ? "active" : ""}`}
+              onClick={() => navigate(page)}
+              aria-current={activePage === page ? "page" : undefined}
+            >
+              {page}
+            </button>
+          ))}
+        </nav>
+
+        <div className="nav-actions">
+          <div className={`nav-search ${searchOpen ? "search-open" : ""}`}>
+            {searchOpen && (
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Titles, people, genres"
+                aria-label="Search movies and TV shows"
+                autoFocus
+              />
+            )}
+
+            <button
+              type="button"
+              className="nav-icon-button"
+              onClick={toggleSearch}
+              aria-label={searchOpen ? "Close search" : "Open search"}
+            >
+              {searchOpen ? <X size={21} /> : <Search size={21} />}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="nav-list-button"
+            onClick={() => navigate("My List")}
+          >
+            <Bookmark size={18} />
+            <span>My List</span>
+          </button>
+
+          <button
+            type="button"
+            className="nav-profile"
+            onClick={() => navigate("My List")}
+            aria-label="Open your profile and saved list"
+          >
+            <Film size={20} />
+          </button>
+        </div>
+      </div>
+    </header>
   );
 }
 
