@@ -721,10 +721,7 @@ function App() {
 
       <main className="app-main">
         {!searchQuery && activePage === "Home" && (
-          <Banner
-            onPlay={playTrailer}
-            onMoreInfo={openDetails}
-          />
+          <Banner onPlay={playTrailer} onMoreInfo={openDetails} />
         )}
 
         {searchQuery ? (
@@ -933,8 +930,7 @@ function App() {
                 <iframe
                   src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
                   title={`${getTitle(selectedMovie)} trailer`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                   allowFullScreen
                 />
               </div>
@@ -965,8 +961,7 @@ function App() {
                   selectedMovie.first_air_date) && (
                   <span>
                     {(
-                      selectedMovie.release_date ||
-                      selectedMovie.first_air_date
+                      selectedMovie.release_date || selectedMovie.first_air_date
                     ).slice(0, 4)}
                   </span>
                 )}
