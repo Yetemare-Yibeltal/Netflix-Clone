@@ -2,8 +2,10 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+
 import {
   X,
   Play,
@@ -24,8 +26,33 @@ import Footer from "./Components/Footer/Footer";
 import requests from "./requests";
 import "./App.css";
 
-const IMAGE_BASE = "https://image.tmdb.org/t/p/original";
+const POSTER_BASE = "https://image.tmdb.org/t/p/w500";
+const BACKDROP_BASE = "https://image.tmdb.org/t/p/w780";
 const STORAGE_KEY = "streamflix-my-list";
+
+const FALLBACK_IMAGE =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="500" height="750">
+      <rect width="100%" height="100%" fill="#202020"/>
+      <text
+        x="50%"
+        y="48%"
+        fill="#aaaaaa"
+        font-family="Arial, sans-serif"
+        font-size="28"
+        text-anchor="middle"
+      >StreamFlix</text>
+      <text
+        x="50%"
+        y="55%"
+        fill="#777777"
+        font-family="Arial, sans-serif"
+        font-size="18"
+        text-anchor="middle"
+      >Image unavailable</text>
+    </svg>
+  `);
 
 const GENRES = {
   28: "Action",
@@ -46,42 +73,129 @@ const GENRES = {
 };
 
 const catalogSections = [
-  { title: "Trending This Week", url: requests.fetchTrending },
-  { title: "Popular Movies", url: requests.fetchPopularMovies },
-  { title: "Popular TV Shows", url: requests.fetchPopularTV },
+  {
+    title: "Trending This Week",
+    url: requests.fetchTrending,
+    category: "discovery",
+  },
+  {
+    title: "Popular Movies",
+    url: requests.fetchPopularMovies,
+    category: "movies",
+  },
+  {
+    title: "Popular TV Shows",
+    url: requests.fetchPopularTV,
+    category: "tv",
+  },
   {
     title: "Netflix Originals",
     url: requests.fetchNetflixOriginals,
+    category: "tv",
     large: true,
   },
-  { title: "Top Rated Movies", url: requests.fetchTopRatedMovies },
-  { title: "Now Playing in Theaters", url: requests.fetchNowPlayingMovies },
-  { title: "Action & Adventure", url: requests.fetchActionAdventure },
-  { title: "Comedy Movies", url: requests.fetchComedyMovies },
-  { title: "Crime Stories", url: requests.fetchCrimeMovies },
-  { title: "Documentaries", url: requests.fetchDocumentaries },
-  { title: "Drama", url: requests.fetchDramaMovies },
-  { title: "Family Favorites", url: requests.fetchFamilyMovies },
-  { title: "Fantasy Worlds", url: requests.fetchFantasyMovies },
-  { title: "Horror", url: requests.fetchHorrorMovies },
-  { title: "Mystery", url: requests.fetchMysteryMovies },
-  { title: "Romance", url: requests.fetchRomanceMovies },
+  {
+    title: "Top Rated Movies",
+    url: requests.fetchTopRatedMovies,
+    category: "movies",
+  },
+  {
+    title: "Now Playing in Theaters",
+    url: requests.fetchNowPlayingMovies,
+    category: "discovery",
+  },
+  {
+    title: "Action & Adventure",
+    url: requests.fetchActionAdventure,
+    category: "movies",
+  },
+  {
+    title: "Comedy Movies",
+    url: requests.fetchComedyMovies,
+    category: "movies",
+  },
+  {
+    title: "Crime Stories",
+    url: requests.fetchCrimeMovies,
+    category: "movies",
+  },
+  {
+    title: "Documentaries",
+    url: requests.fetchDocumentaries,
+    category: "movies",
+  },
+  {
+    title: "Drama",
+    url: requests.fetchDramaMovies,
+    category: "movies",
+  },
+  {
+    title: "Family Favorites",
+    url: requests.fetchFamilyMovies,
+    category: "movies",
+  },
+  {
+    title: "Fantasy Worlds",
+    url: requests.fetchFantasyMovies,
+    category: "movies",
+  },
+  {
+    title: "Horror",
+    url: requests.fetchHorrorMovies,
+    category: "movies",
+  },
+  {
+    title: "Mystery",
+    url: requests.fetchMysteryMovies,
+    category: "movies",
+  },
+  {
+    title: "Romance",
+    url: requests.fetchRomanceMovies,
+    category: "movies",
+  },
   {
     title: "Science Fiction",
     url: requests.fetchScienceFictionMovies,
+    category: "movies",
   },
-  { title: "Thrillers", url: requests.fetchThrillers || requests.fetchThrillerMovies },
-  { title: "Animation", url: requests.fetchAnimationMovies },
-  { title: "Historical Films", url: requests.fetchHistoryMovies },
-  { title: "Upcoming Movies", url: requests.fetchUpcomingMovies },
-  { title: "Top Rated TV Shows", url: requests.fetchTopRatedTV },
-  { title: "TV Shows Airing Today", url: requests.fetchAiringTodayTV },
+  {
+    title: "Thrillers",
+    url: requests.fetchThrillers || requests.fetchThrillerMovies,
+    category: "movies",
+  },
+  {
+    title: "Animation",
+    url: requests.fetchAnimationMovies,
+    category: "movies",
+  },
+  {
+    title: "Historical Films",
+    url: requests.fetchHistoryMovies,
+    category: "movies",
+  },
+  {
+    title: "Upcoming Movies",
+    url: requests.fetchUpcomingMovies,
+    category: "discovery",
+  },
+  {
+    title: "Top Rated TV Shows",
+    url: requests.fetchTopRatedTV,
+    category: "tv",
+  },
+  {
+    title: "TV Shows Airing Today",
+    url: requests.fetchAiringTodayTV,
+    category: "tv",
+  },
 ].filter((section) => Boolean(section.url));
 
 function readSavedList() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : [];
+
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -105,8 +219,15 @@ function getMediaType(item) {
 }
 
 function getImage(item) {
-  const path = item?.poster_path || item?.backdrop_path;
-  return path ? `${IMAGE_BASE}${path}` : "";
+  if (item?.poster_path) {
+    return `${POSTER_BASE}${item.poster_path}`;
+  }
+
+  if (item?.backdrop_path) {
+    return `${BACKDROP_BASE}${item.backdrop_path}`;
+  }
+
+  return FALLBACK_IMAGE;
 }
 
 function App() {
@@ -116,6 +237,7 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [searchRetry, setSearchRetry] = useState(0);
 
   const [genreResults, setGenreResults] = useState([]);
   const [genrePage, setGenrePage] = useState(1);
@@ -123,12 +245,17 @@ function App() {
   const [genreLoading, setGenreLoading] = useState(false);
   const [genreLoadingMore, setGenreLoadingMore] = useState(false);
   const [genreError, setGenreError] = useState("");
+  const [genreRetry, setGenreRetry] = useState(0);
 
   const [savedList, setSavedList] = useState(readSavedList);
+
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [trailerKey, setTrailerKey] = useState("");
   const [trailerLoading, setTrailerLoading] = useState(false);
   const [trailerError, setTrailerError] = useState("");
+
+  // Prevent an older trailer request from overwriting a newer one.
+  const trailerRequestId = useRef(0);
 
   // Persist My List.
   useEffect(() => {
@@ -142,48 +269,52 @@ function App() {
     }
   }, [savedList]);
 
-  // Search movies and television shows.
+  // Search input handler.
   const handleSearch = useCallback((value) => {
     setSearchQuery(value);
     setSearchError("");
   }, []);
 
+  // Search movies and TV shows with debounce and cancellation.
   useEffect(() => {
-    let active = true;
+    const query = searchQuery.trim();
 
-    if (!searchQuery.trim()) {
+    if (!query) {
       setSearchResults([]);
       setSearchLoading(false);
       setSearchError("");
       return undefined;
     }
 
+    let active = true;
     const controller = new AbortController();
 
     const timer = window.setTimeout(async () => {
       setSearchLoading(true);
+      setSearchError("");
 
       try {
         const response = await axios.get("/search/multi", {
           params: {
-            query: searchQuery.trim(),
+            query,
             page: 1,
             include_adult: false,
+            language: "en-US",
           },
           signal: controller.signal,
         });
 
         if (!active) return;
 
+        const results = response.data.results || [];
+
         setSearchResults(
-          (response.data.results || []).filter(
+          results.filter(
             (item) =>
               item.media_type !== "person" &&
               (item.poster_path || item.backdrop_path)
           )
         );
-
-        setSearchError("");
       } catch (error) {
         if (
           !active ||
@@ -193,24 +324,26 @@ function App() {
           return;
         }
 
-        console.error("Search failed:", error);
+        console.error("Search request failed:", error);
         setSearchResults([]);
         setSearchError(
-          "Search failed. Check your connection and TMDB API configuration."
+          "Unable to search right now. Check your connection and TMDB API configuration."
         );
       } finally {
-        if (active) setSearchLoading(false);
+        if (active) {
+          setSearchLoading(false);
+        }
       }
-    }, 300);
+    }, 350);
 
     return () => {
       active = false;
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [searchQuery]);
+  }, [searchQuery, searchRetry]);
 
-  // Load movies for the selected genre.
+  // Load genre results. genreRetry allows a real retry even on page 1.
   useEffect(() => {
     if (!activePage.startsWith("Genre:")) {
       setGenreResults([]);
@@ -224,7 +357,7 @@ function App() {
 
     const genreId = activePage.slice("Genre:".length);
 
-    if (!GENRES[genreId]) {
+    if (!Object.prototype.hasOwnProperty.call(GENRES, genreId)) {
       setGenreResults([]);
       setGenreError("This genre is not supported.");
       setGenreLoading(false);
@@ -264,7 +397,9 @@ function App() {
         );
 
         setGenreResults((current) => {
-          if (isFirstPage) return results;
+          if (isFirstPage) {
+            return results;
+          }
 
           const existingIds = new Set(
             current.map((movie) => movie.id)
@@ -293,7 +428,7 @@ function App() {
         console.error("Genre request failed:", error);
 
         setGenreError(
-          "Unable to load this genre. Please check your connection and try again."
+          "Unable to load this genre. Please try again."
         );
 
         if (isFirstPage) {
@@ -314,7 +449,7 @@ function App() {
       active = false;
       controller.abort();
     };
-  }, [activePage, genrePage]);
+  }, [activePage, genrePage, genreRetry]);
 
   // Add or remove a title from My List.
   const toggleList = useCallback((movie) => {
@@ -355,8 +490,10 @@ function App() {
     [savedList]
   );
 
-  // Navigate between the app's pages.
+  // Navigate between app pages and cancel any previous trailer request.
   const handleNavigate = useCallback((page) => {
+    trailerRequestId.current += 1;
+
     setActivePage(page);
     setSearchQuery("");
     setSearchResults([]);
@@ -364,10 +501,14 @@ function App() {
     setSelectedMovie(null);
     setTrailerKey("");
     setTrailerError("");
+    setTrailerLoading(false);
+
     setGenreResults([]);
     setGenrePage(1);
     setGenreHasMore(false);
     setGenreError("");
+    setGenreLoading(false);
+    setGenreLoadingMore(false);
 
     window.scrollTo({
       top: 0,
@@ -375,8 +516,10 @@ function App() {
     });
   }, []);
 
-  // Find and play a movie or show trailer.
+  // Load a YouTube trailer without allowing stale requests to win.
   const playTrailer = useCallback(async (movie) => {
+    const requestId = ++trailerRequestId.current;
+
     setSelectedMovie(movie);
     setTrailerKey("");
     setTrailerError("");
@@ -386,72 +529,82 @@ function App() {
       const mediaType = getMediaType(movie);
 
       const response = await axios.get(
-        `/${mediaType}/${movie.id}/videos`
+        `/${mediaType}/${movie.id}/videos`,
+        {
+          params: {
+            language: "en-US",
+          },
+        }
       );
+
+      if (requestId !== trailerRequestId.current) return;
 
       const videos = response.data.results || [];
 
+      const youtubeVideos = videos.filter(
+        (video) =>
+          video.site === "YouTube" &&
+          video.key
+      );
+
       const trailer =
-        videos.find(
+        youtubeVideos.find(
           (video) =>
-            video.site === "YouTube" &&
             video.type === "Trailer" &&
             video.official
         ) ||
-        videos.find(
-          (video) =>
-            video.site === "YouTube" &&
-            video.type === "Trailer"
+        youtubeVideos.find(
+          (video) => video.type === "Trailer"
         ) ||
-        videos.find(
-          (video) => video.site === "YouTube"
-        );
+        youtubeVideos.find(
+          (video) => video.type === "Teaser"
+        ) ||
+        youtubeVideos[0];
 
       if (trailer?.key) {
         setTrailerKey(trailer.key);
       } else {
         setTrailerError(
-          "No YouTube trailer is currently available for this title."
+          "No YouTube trailer is available for this title."
         );
       }
     } catch (error) {
+      if (requestId !== trailerRequestId.current) return;
+
       console.error("Unable to load trailer:", error);
+
       setTrailerError(
-        "Unable to load the trailer. Please try again later."
+        "Unable to load the trailer. Check your connection and try again."
       );
     } finally {
-      setTrailerLoading(false);
+      if (requestId === trailerRequestId.current) {
+        setTrailerLoading(false);
+      }
     }
   }, []);
 
-  // Choose the homepage rows based on the selected navigation page.
+  // Give each navigation page a distinct catalog.
   const visibleSections = useMemo(() => {
-    if (activePage === "TV Shows") {
-      return catalogSections.filter((section) =>
-        /TV Shows|Netflix Originals|Trending|Top Rated TV/.test(
-          section.title
-        )
-      );
-    }
+    switch (activePage) {
+      case "Movies":
+        return catalogSections.filter(
+          (section) => section.category === "movies"
+        );
 
-    if (activePage === "Movies") {
-      return catalogSections.filter(
-        (section) =>
-          !/TV Shows Airing|Popular TV|Top Rated TV/.test(
-            section.title
-          )
-      );
-    }
+      case "TV Shows":
+        return catalogSections.filter(
+          (section) => section.category === "tv"
+        );
 
-    if (activePage === "New & Popular") {
-      return catalogSections.filter((section) =>
-        /Trending|Popular|Upcoming|Now Playing/.test(
-          section.title
-        )
-      );
-    }
+      case "New & Popular":
+        return catalogSections.filter(
+          (section) => section.category === "discovery"
+        );
 
-    return catalogSections;
+      case "Home":
+      default:
+        return catalogSections;
+    }
   }, [activePage]);
 
   const genreId = activePage.startsWith("Genre:")
@@ -465,7 +618,10 @@ function App() {
     [activePage, savedList]
   );
 
+  // Open title information without automatically loading the trailer.
   const openDetails = useCallback((movie) => {
+    trailerRequestId.current += 1;
+
     setSelectedMovie(movie);
     setTrailerKey("");
     setTrailerError("");
@@ -473,12 +629,32 @@ function App() {
   }, []);
 
   const closeDetails = useCallback(() => {
+    trailerRequestId.current += 1;
+
     setSelectedMovie(null);
     setTrailerKey("");
     setTrailerError("");
     setTrailerLoading(false);
   }, []);
 
+  // Support closing the modal with Escape.
+  useEffect(() => {
+    if (!selectedMovie) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        closeDetails();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedMovie, closeDetails]);
+
+  // Render cards for search, genres, and My List.
   const renderMovieCard = (movie, showRemove = false) => {
     const image = getImage(movie);
 
@@ -493,15 +669,15 @@ function App() {
           onClick={() => openDetails(movie)}
           aria-label={`View details for ${getTitle(movie)}`}
         >
-          {image ? (
-            <img
-              src={image}
-              alt={getTitle(movie)}
-              loading="lazy"
-            />
-          ) : (
-            <span>{getTitle(movie)}</span>
-          )}
+          <img
+            src={image}
+            alt={getTitle(movie)}
+            loading="lazy"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = FALLBACK_IMAGE;
+            }}
+          />
         </button>
 
         <h2>{getTitle(movie)}</h2>
@@ -509,7 +685,7 @@ function App() {
         {movie.vote_average > 0 && (
           <p className="app-card-rating">
             <Star size={14} fill="currentColor" />
-            {movie.vote_average.toFixed(1)} / 10
+            {Number(movie.vote_average).toFixed(1)} / 10
           </p>
         )}
 
@@ -562,13 +738,12 @@ function App() {
       />
 
       <main className="app-main">
-        {!searchQuery &&
-          activePage === "Home" && (
-            <Banner
-              onPlay={playTrailer}
-              onMoreInfo={openDetails}
-            />
-          )}
+        {!searchQuery && activePage === "Home" && (
+          <Banner
+            onPlay={playTrailer}
+            onMoreInfo={openDetails}
+          />
+        )}
 
         {searchQuery ? (
           <section className="app-results page-container">
@@ -583,11 +758,15 @@ function App() {
               </div>
             ) : searchError ? (
               <div className="status-message error-message">
-                {searchError}
+                <p>{searchError}</p>
+
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => handleSearch(searchQuery)}
+                  onClick={() => {
+                    setSearchError("");
+                    setSearchRetry((value) => value + 1);
+                  }}
                 >
                   <RotateCw size={16} />
                   Try again
@@ -626,6 +805,7 @@ function App() {
                 <p>
                   Add movies and shows using the My List button.
                 </p>
+
                 <button
                   type="button"
                   className="primary-button"
@@ -644,6 +824,7 @@ function App() {
                 <p className="app-page-subtitle">
                   EXPLORE BY GENRE
                 </p>
+
                 <h1 className="app-page-title">
                   {genreTitle} Movies
                 </h1>
@@ -662,13 +843,15 @@ function App() {
             {genreError && (
               <div className="status-message error-message">
                 <p>{genreError}</p>
+
                 <button
                   type="button"
                   className="secondary-button"
                   onClick={() => {
-                    setGenrePage(1);
                     setGenreResults([]);
+                    setGenrePage(1);
                     setGenreError("");
+                    setGenreRetry((value) => value + 1);
                   }}
                 >
                   <RotateCw size={16} />
@@ -719,18 +902,45 @@ function App() {
             ) : null}
           </section>
         ) : (
-          visibleSections.map((section) => (
-            <Rows
-              key={section.title}
-              title={section.title}
-              fetchUrl={section.url}
-              isLargeRow={section.large}
-              onPlay={playTrailer}
-              onMoreInfo={openDetails}
-              onToggleList={toggleList}
-              isInList={isInList}
-            />
-          ))
+          <>
+            {activePage !== "Home" && (
+              <section className="page-container app-section-heading">
+                <h1 className="app-page-title">
+                  {activePage}
+                </h1>
+
+                <p className="app-page-subtitle">
+                  {activePage === "Movies"
+                    ? "Explore movies by popularity, rating, and genre."
+                    : activePage === "TV Shows"
+                    ? "Discover popular and highly rated television shows."
+                    : activePage === "New & Popular"
+                    ? "Discover trending titles, new releases, and movies in theaters."
+                    : ""}
+                </p>
+              </section>
+            )}
+
+            {visibleSections.length > 0 ? (
+              visibleSections.map((section) => (
+                <Rows
+                  key={section.title}
+                  title={section.title}
+                  fetchUrl={section.url}
+                  isLargeRow={section.large}
+                  onPlay={playTrailer}
+                  onMoreInfo={openDetails}
+                  onToggleList={toggleList}
+                  isInList={isInList}
+                />
+              ))
+            ) : (
+              <div className="status-message">
+                No content is configured for this page yet.
+                Check your requests.js configuration.
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -763,9 +973,9 @@ function App() {
             {trailerKey ? (
               <div className="title-trailer">
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
+                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?rel=0`}
                   title={`${getTitle(selectedMovie)} trailer`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
                 />
@@ -775,8 +985,8 @@ function App() {
                 className="title-modal-backdrop"
                 style={{
                   backgroundImage: selectedMovie.backdrop_path
-                    ? `url("${IMAGE_BASE}${selectedMovie.backdrop_path}")`
-                    : undefined,
+                    ? `url("${BACKDROP_BASE}${selectedMovie.backdrop_path}")`
+                    : `url("${getImage(selectedMovie)}")`,
                 }}
               />
             )}
@@ -792,7 +1002,7 @@ function App() {
                 {selectedMovie.vote_average > 0 && (
                   <span className="title-modal-rating">
                     <Star size={15} fill="currentColor" />
-                    {selectedMovie.vote_average.toFixed(1)} / 10
+                    {Number(selectedMovie.vote_average).toFixed(1)} / 10
                   </span>
                 )}
 
@@ -848,6 +1058,7 @@ function App() {
                   ) : (
                     <Plus size={18} />
                   )}
+
                   {isInList(selectedMovie)
                     ? "In My List"
                     : "My List"}
