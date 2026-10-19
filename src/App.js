@@ -1,3 +1,4 @@
+
 import React, {
   useCallback,
   useEffect,
@@ -35,22 +36,12 @@ const FALLBACK_IMAGE =
   encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="500" height="750">
       <rect width="100%" height="100%" fill="#202020"/>
-      <text
-        x="50%"
-        y="48%"
-        fill="#aaaaaa"
-        font-family="Arial, sans-serif"
-        font-size="28"
-        text-anchor="middle"
-      >StreamFlix</text>
-      <text
-        x="50%"
-        y="55%"
-        fill="#777777"
-        font-family="Arial, sans-serif"
-        font-size="18"
-        text-anchor="middle"
-      >Image unavailable</text>
+      <text x="50%" y="48%" fill="#aaaaaa"
+        font-family="Arial,sans-serif" font-size="28"
+        text-anchor="middle">StreamFlix</text>
+      <text x="50%" y="55%" fill="#777777"
+        font-family="Arial,sans-serif" font-size="18"
+        text-anchor="middle">Image unavailable</text>
     </svg>
   `);
 
@@ -254,7 +245,6 @@ function App() {
   const [trailerLoading, setTrailerLoading] = useState(false);
   const [trailerError, setTrailerError] = useState("");
 
-  // Prevent an older trailer request from overwriting a newer one.
   const trailerRequestId = useRef(0);
 
   // Persist My List.
@@ -269,13 +259,13 @@ function App() {
     }
   }, [savedList]);
 
-  // Search input handler.
+  // Search handler.
   const handleSearch = useCallback((value) => {
     setSearchQuery(value);
     setSearchError("");
   }, []);
 
-  // Search movies and TV shows with debounce and cancellation.
+  // Search movies and TV shows.
   useEffect(() => {
     const query = searchQuery.trim();
 
@@ -306,7 +296,9 @@ function App() {
 
         if (!active) return;
 
-        const results = response.data.results || [];
+        const results = Array.isArray(response.data?.results)
+          ? response.data.results
+          : [];
 
         setSearchResults(
           results.filter(
@@ -330,9 +322,7 @@ function App() {
           "Unable to search right now. Check your connection and TMDB API configuration."
         );
       } finally {
-        if (active) {
-          setSearchLoading(false);
-        }
+        if (active) setSearchLoading(false);
       }
     }, 350);
 
@@ -343,7 +333,7 @@ function App() {
     };
   }, [searchQuery, searchRetry]);
 
-  // Load genre results. genreRetry allows a real retry even on page 1.
+  // Load genre results.
   useEffect(() => {
     if (!activePage.startsWith("Genre:")) {
       setGenreResults([]);
@@ -392,14 +382,16 @@ function App() {
 
         if (!active) return;
 
-        const results = (response.data.results || []).filter(
+        const results = (
+          Array.isArray(response.data?.results)
+            ? response.data.results
+            : []
+        ).filter(
           (movie) => movie.poster_path || movie.backdrop_path
         );
 
         setGenreResults((current) => {
-          if (isFirstPage) {
-            return results;
-          }
+          if (isFirstPage) return results;
 
           const existingIds = new Set(
             current.map((movie) => movie.id)
@@ -414,7 +406,7 @@ function App() {
         });
 
         setGenreHasMore(
-          genrePage < (response.data.total_pages || 1)
+          genrePage < (response.data?.total_pages || 1)
         );
       } catch (error) {
         if (
@@ -426,7 +418,6 @@ function App() {
         }
 
         console.error("Genre request failed:", error);
-
         setGenreError(
           "Unable to load this genre. Please try again."
         );
@@ -471,10 +462,7 @@ function App() {
       }
 
       return [
-        {
-          ...movie,
-          media_type: getMediaType(movie),
-        },
+        { ...movie, media_type: getMediaType(movie) },
         ...current,
       ];
     });
@@ -490,7 +478,7 @@ function App() {
     [savedList]
   );
 
-  // Navigate between app pages and cancel any previous trailer request.
+  // Navigate between pages.
   const handleNavigate = useCallback((page) => {
     trailerRequestId.current += 1;
 
@@ -510,14 +498,35 @@ function App() {
     setGenreLoading(false);
     setGenreLoadingMore(false);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Load a YouTube trailer without allowing stale requests to win.
+  // Open details immediately, without waiting for TMDB.
+  const openDetails = useCallback((movie) => {
+    console.log("[App] More Info clicked:", movie);
+
+    if (!movie || !movie.id) {
+      console.error("[App] Cannot open details: movie is missing an ID.");
+      return;
+    }
+
+    trailerRequestId.current += 1;
+
+    setSelectedMovie(movie);
+    setTrailerKey("");
+    setTrailerError("");
+    setTrailerLoading(false);
+  }, []);
+
+  // Fetch and play a YouTube trailer.
   const playTrailer = useCallback(async (movie) => {
+    console.log("[App] Play Trailer clicked:", movie);
+
+    if (!movie || !movie.id) {
+      console.error("[App] Cannot load trailer: movie is missing an ID.");
+      return;
+    }
+
     const requestId = ++trailerRequestId.current;
 
     setSelectedMovie(movie);
@@ -530,28 +539,22 @@ function App() {
 
       const response = await axios.get(
         `/${mediaType}/${movie.id}/videos`,
-        {
-          params: {
-            language: "en-US",
-          },
-        }
+        { params: { language: "en-US" } }
       );
 
       if (requestId !== trailerRequestId.current) return;
 
-      const videos = response.data.results || [];
+      const videos = Array.isArray(response.data?.results)
+        ? response.data.results
+        : [];
 
       const youtubeVideos = videos.filter(
-        (video) =>
-          video.site === "YouTube" &&
-          video.key
+        (video) => video.site === "YouTube" && video.key
       );
 
       const trailer =
         youtubeVideos.find(
-          (video) =>
-            video.type === "Trailer" &&
-            video.official
+          (video) => video.type === "Trailer" && video.official
         ) ||
         youtubeVideos.find(
           (video) => video.type === "Trailer"
@@ -571,10 +574,9 @@ function App() {
     } catch (error) {
       if (requestId !== trailerRequestId.current) return;
 
-      console.error("Unable to load trailer:", error);
-
+      console.error("[App] Unable to load trailer:", error);
       setTrailerError(
-        "Unable to load the trailer. Check your connection and try again."
+        "Unable to load the trailer. Check your connection and TMDB API configuration."
       );
     } finally {
       if (requestId === trailerRequestId.current) {
@@ -583,7 +585,15 @@ function App() {
     }
   }, []);
 
-  // Give each navigation page a distinct catalog.
+  const closeDetails = useCallback(() => {
+    trailerRequestId.current += 1;
+    setSelectedMovie(null);
+    setTrailerKey("");
+    setTrailerError("");
+    setTrailerLoading(false);
+  }, []);
+
+  // Select the correct catalog for the active page.
   const visibleSections = useMemo(() => {
     switch (activePage) {
       case "Movies":
@@ -618,116 +628,88 @@ function App() {
     [activePage, savedList]
   );
 
-  // Open title information without automatically loading the trailer.
-  const openDetails = useCallback((movie) => {
-    trailerRequestId.current += 1;
-
-    setSelectedMovie(movie);
-    setTrailerKey("");
-    setTrailerError("");
-    setTrailerLoading(false);
-  }, []);
-
-  const closeDetails = useCallback(() => {
-    trailerRequestId.current += 1;
-
-    setSelectedMovie(null);
-    setTrailerKey("");
-    setTrailerError("");
-    setTrailerLoading(false);
-  }, []);
-
-  // Support closing the modal with Escape.
+  // Close the details modal with Escape.
   useEffect(() => {
     if (!selectedMovie) return undefined;
 
     function handleKeyDown(event) {
-      if (event.key === "Escape") {
-        closeDetails();
-      }
+      if (event.key === "Escape") closeDetails();
     }
 
     window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedMovie, closeDetails]);
 
-  // Render cards for search, genres, and My List.
-  const renderMovieCard = (movie, showRemove = false) => {
-    const image = getImage(movie);
-
-    return (
-      <article
-        className="app-result-card"
-        key={`${getMediaType(movie)}-${movie.id}`}
+  // Cards used by search, genre and My List pages.
+  const renderMovieCard = (movie, showRemove = false) => (
+    <article
+      className="app-result-card"
+      key={`${getMediaType(movie)}-${movie.id}`}
+    >
+      <button
+        type="button"
+        className="app-result-poster"
+        onClick={() => openDetails(movie)}
+        aria-label={`View details for ${getTitle(movie)}`}
       >
-        <button
-          type="button"
-          className="app-result-poster"
-          onClick={() => openDetails(movie)}
-          aria-label={`View details for ${getTitle(movie)}`}
-        >
-          <img
-            src={image}
-            alt={getTitle(movie)}
-            loading="lazy"
-            onError={(event) => {
-              event.currentTarget.onerror = null;
-              event.currentTarget.src = FALLBACK_IMAGE;
-            }}
-          />
-        </button>
+        <img
+          src={getImage(movie)}
+          alt={getTitle(movie)}
+          loading="lazy"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = FALLBACK_IMAGE;
+          }}
+        />
+      </button>
 
-        <h2>{getTitle(movie)}</h2>
+      <h2>{getTitle(movie)}</h2>
 
-        {movie.vote_average > 0 && (
-          <p className="app-card-rating">
-            <Star size={14} fill="currentColor" />
-            {Number(movie.vote_average).toFixed(1)} / 10
-          </p>
-        )}
+      {movie.vote_average > 0 && (
+        <p className="app-card-rating">
+          <Star size={14} fill="currentColor" />
+          {Number(movie.vote_average).toFixed(1)} / 10
+        </p>
+      )}
 
-        <div className="app-result-actions">
-          {showRemove ? (
+      <div className="app-result-actions">
+        {showRemove ? (
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => toggleList(movie)}
+          >
+            <X size={16} />
+            Remove
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => playTrailer(movie)}
+            >
+              <Play size={16} fill="currentColor" />
+              Trailer
+            </button>
+
             <button
               type="button"
               className="secondary-button"
               onClick={() => toggleList(movie)}
             >
-              <X size={16} />
-              Remove
+              {isInList(movie) ? (
+                <Check size={16} />
+              ) : (
+                <Plus size={16} />
+              )}
+              {isInList(movie) ? "Saved" : "My List"}
             </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => playTrailer(movie)}
-              >
-                <Play size={16} fill="currentColor" />
-                Trailer
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => toggleList(movie)}
-              >
-                {isInList(movie) ? (
-                  <Check size={16} />
-                ) : (
-                  <Plus size={16} />
-                )}
-                {isInList(movie) ? "Saved" : "My List"}
-              </button>
-            </>
-          )}
-        </div>
-      </article>
-    );
-  };
+          </>
+        )}
+      </div>
+    </article>
+  );
 
   return (
     <div className="App">
@@ -739,7 +721,10 @@ function App() {
 
       <main className="app-main">
         {!searchQuery && activePage === "Home" && (
-          <Banner onPlay={playTrailer} onMoreInfo={openDetails} />
+          <Banner
+            onPlay={playTrailer}
+            onMoreInfo={openDetails}
+          />
         )}
 
         {searchQuery ? (
@@ -756,14 +741,10 @@ function App() {
             ) : searchError ? (
               <div className="status-message error-message">
                 <p>{searchError}</p>
-
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={() => {
-                    setSearchError("");
-                    setSearchRetry((value) => value + 1);
-                  }}
+                  onClick={() => setSearchRetry((value) => value + 1)}
                 >
                   <RotateCw size={16} />
                   Try again
@@ -782,7 +763,6 @@ function App() {
         ) : activePage === "My List" ? (
           <section className="app-list-page page-container">
             <h1 className="app-page-title">My List</h1>
-
             <p className="app-page-subtitle">
               Your saved movies and shows, ready whenever you are.
             </p>
@@ -796,7 +776,6 @@ function App() {
                 <Bookmark size={24} />
                 <p>Your list is empty.</p>
                 <p>Add movies and shows using the My List button.</p>
-
                 <button
                   type="button"
                   className="primary-button"
@@ -813,7 +792,6 @@ function App() {
             <div className="genre-page-heading">
               <div>
                 <p className="app-page-subtitle">EXPLORE BY GENRE</p>
-
                 <h1 className="app-page-title">{genreTitle} Movies</h1>
               </div>
 
@@ -830,7 +808,6 @@ function App() {
             {genreError && (
               <div className="status-message error-message">
                 <p>{genreError}</p>
-
                 <button
                   type="button"
                   className="secondary-button"
@@ -889,7 +866,6 @@ function App() {
             {activePage !== "Home" && (
               <section className="page-container app-section-heading">
                 <h1 className="app-page-title">{activePage}</h1>
-
                 <p className="app-page-subtitle">
                   {activePage === "Movies"
                     ? "Explore movies by popularity, rating, and genre."
@@ -908,11 +884,12 @@ function App() {
                   key={section.title}
                   title={section.title}
                   fetchUrl={section.url}
-                  isLargeRow={section.large}
+                  isLargeRow={Boolean(section.large)}
                   onPlay={playTrailer}
                   onMoreInfo={openDetails}
                   onToggleList={toggleList}
                   isInList={isInList}
+                  searchQuery={searchQuery}
                 />
               ))
             ) : (
@@ -954,9 +931,9 @@ function App() {
             {trailerKey ? (
               <div className="title-trailer">
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?rel=0`}
+                  src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`}
                   title={`${getTitle(selectedMovie)} trailer`}
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   referrerPolicy="strict-origin-when-cross-origin"
                   allowFullScreen
                 />
@@ -974,7 +951,6 @@ function App() {
 
             <div className="title-modal-body">
               <p className="title-modal-kicker">STREAMFLIX TITLE</p>
-
               <h2>{getTitle(selectedMovie)}</h2>
 
               <div className="title-modal-meta">
@@ -989,7 +965,8 @@ function App() {
                   selectedMovie.first_air_date) && (
                   <span>
                     {(
-                      selectedMovie.release_date || selectedMovie.first_air_date
+                      selectedMovie.release_date ||
+                      selectedMovie.first_air_date
                     ).slice(0, 4)}
                   </span>
                 )}
@@ -1010,7 +987,9 @@ function App() {
               )}
 
               {trailerError && (
-                <p className="title-modal-note">{trailerError}</p>
+                <p className="title-modal-note" role="status">
+                  {trailerError}
+                </p>
               )}
 
               <div className="title-modal-actions">
@@ -1034,7 +1013,6 @@ function App() {
                   ) : (
                     <Plus size={18} />
                   )}
-
                   {isInList(selectedMovie) ? "In My List" : "My List"}
                 </button>
               </div>
