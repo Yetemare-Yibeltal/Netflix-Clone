@@ -1,12 +1,41 @@
-
 import React, { useEffect, useState } from "react";
-import { Search, X, Film, Bookmark } from "lucide-react";
+import {
+  Search,
+  X,
+  Film,
+  Bookmark,
+  ChevronDown,
+} from "lucide-react";
 import "./Nav.css";
 
-function Nav({ onSearch, onNavigate, activePage = "Home" }) {
+const GENRES = [
+  { id: 28, name: "Action" },
+  { id: 12, name: "Adventure" },
+  { id: 16, name: "Animation" },
+  { id: 35, name: "Comedy" },
+  { id: 80, name: "Crime" },
+  { id: 99, name: "Documentary" },
+  { id: 18, name: "Drama" },
+  { id: 14, name: "Fantasy" },
+  { id: 27, name: "Horror" },
+  { id: 9648, name: "Mystery" },
+  { id: 10749, name: "Romance" },
+  { id: 878, name: "Science Fiction" },
+  { id: 53, name: "Thriller" },
+  { id: 10751, name: "Family" },
+  { id: 36, name: "History" },
+];
+
+function Nav({
+  onSearch,
+  onNavigate,
+  activePage = "Home",
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -14,7 +43,9 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
     };
 
     handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -35,16 +66,32 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
     if (onNavigate) {
       onNavigate(page);
     }
+    setProfileOpen(false);
   };
 
   const toggleSearch = () => {
-    setSearchOpen((open) => {
-      if (open) {
-        setSearchTerm("");
-        if (onSearch) onSearch("");
-      }
-      return !open;
-    });
+    if (searchOpen) {
+      setSearchTerm("");
+      if (onSearch) onSearch("");
+    }
+
+    setSearchOpen((open) => !open);
+  };
+
+  const handleGenreChange = (event) => {
+    const genreId = event.target.value;
+
+    if (!genreId) return;
+
+    const genre = GENRES.find(
+      (item) => String(item.id) === genreId
+    );
+
+    setSelectedGenre("");
+
+    if (genre && onNavigate) {
+      onNavigate(`Genre:${genre.id}`);
+    }
   };
 
   return (
@@ -61,55 +108,65 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
         </button>
 
         <nav className="nav-links" aria-label="Main navigation">
-          {["Home", "TV Shows", "Movies", "New & Popular"].map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`nav-link ${activePage === page ? "active" : ""}`}
-              onClick={() => navigate(page)}
-              aria-current={activePage === page ? "page" : undefined}
-            >
-              {page}
-            </button>
-          ))}
+          {["Home", "TV Shows", "Movies", "New & Popular"].map(
+            (page) => (
+              <button
+                key={page}
+                type="button"
+                className={`nav-link ${
+                  activePage === page ? "active" : ""
+                }`}
+                onClick={() => navigate(page)}
+                aria-current={
+                  activePage === page ? "page" : undefined
+                }
+              >
+                {page}
+              </button>
+            )
+          )}
         </nav>
+
         <div className="nav-genres">
-          <label htmlFor="nav-genre">Browse Genres</label>
-          <select
-            id="nav-genre"
-            defaultValue=""
-            onChange={(event) => {
-              if (event.target.value && onNavigate) {
-                onNavigate(`Genre:${event.target.value}`);
-              }
-            }}
-          >
-            <option value="" disabled>
-              Genres
-            </option>
-            <option value="28">Action</option>
-            <option value="12">Adventure</option>
-            <option value="16">Animation</option>
-            <option value="35">Comedy</option>
-            <option value="80">Crime</option>
-            <option value="99">Documentary</option>
-            <option value="18">Drama</option>
-            <option value="14">Fantasy</option>
-            <option value="27">Horror</option>
-            <option value="9648">Mystery</option>
-            <option value="10749">Romance</option>
-            <option value="878">Science Fiction</option>
-            <option value="53">Thriller</option>
-          </select>
+          <label htmlFor="nav-genre">Browse genres</label>
+
+          <div className="nav-genre-control">
+            <select
+              id="nav-genre"
+              value={selectedGenre}
+              onChange={handleGenreChange}
+              aria-label="Browse movies by genre"
+            >
+              <option value="">Browse Genres</option>
+
+              {GENRES.map((genre) => (
+                <option key={genre.id} value={genre.id}>
+                  {genre.name}
+                </option>
+              ))}
+            </select>
+
+            <ChevronDown
+              className="nav-genre-chevron"
+              size={15}
+              aria-hidden="true"
+            />
+          </div>
         </div>
 
         <div className="nav-actions">
-          <div className={`nav-search ${searchOpen ? "search-open" : ""}`}>
+          <div
+            className={`nav-search ${
+              searchOpen ? "search-open" : ""
+            }`}
+          >
             {searchOpen && (
               <input
                 type="search"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) =>
+                  setSearchTerm(event.target.value)
+                }
                 placeholder="Titles, people, genres"
                 aria-label="Search movies and TV shows"
                 autoFocus
@@ -120,9 +177,15 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
               type="button"
               className="nav-icon-button"
               onClick={toggleSearch}
-              aria-label={searchOpen ? "Close search" : "Open search"}
+              aria-label={
+                searchOpen ? "Close search" : "Open search"
+              }
             >
-              {searchOpen ? <X size={21} /> : <Search size={21} />}
+              {searchOpen ? (
+                <X size={21} />
+              ) : (
+                <Search size={21} />
+              )}
             </button>
           </div>
 
@@ -130,19 +193,43 @@ function Nav({ onSearch, onNavigate, activePage = "Home" }) {
             type="button"
             className="nav-list-button"
             onClick={() => navigate("My List")}
+            aria-label="Open My List"
           >
             <Bookmark size={18} />
             <span>My List</span>
           </button>
 
-          <button
-            type="button"
-            className="nav-profile"
-            onClick={() => navigate("My List")}
-            aria-label="Open your profile and saved list"
-          >
-            <Film size={20} />
-          </button>
+          <div className="nav-profile-wrapper">
+            <button
+              type="button"
+              className="nav-profile"
+              onClick={() => setProfileOpen((open) => !open)}
+              aria-label="Open profile menu"
+              aria-expanded={profileOpen}
+            >
+              <Film size={20} />
+            </button>
+
+            {profileOpen && (
+              <div className="nav-profile-menu">
+                <button
+                  type="button"
+                  onClick={() => navigate("My List")}
+                >
+                  <Bookmark size={16} />
+                  My List
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("Home")}
+                >
+                  <Film size={16} />
+                  Browse titles
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
