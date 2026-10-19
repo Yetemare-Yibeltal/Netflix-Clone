@@ -739,10 +739,7 @@ function App() {
 
       <main className="app-main">
         {!searchQuery && activePage === "Home" && (
-          <Banner
-            onPlay={playTrailer}
-            onMoreInfo={openDetails}
-          />
+          <Banner onPlay={playTrailer} onMoreInfo={openDetails} />
         )}
 
         {searchQuery ? (
@@ -774,9 +771,7 @@ function App() {
               </div>
             ) : searchResults.length > 0 ? (
               <div className="app-results-grid">
-                {searchResults.map((movie) =>
-                  renderMovieCard(movie)
-                )}
+                {searchResults.map((movie) => renderMovieCard(movie))}
               </div>
             ) : (
               <div className="status-message">
@@ -794,17 +789,13 @@ function App() {
 
             {savedRows.length > 0 ? (
               <div className="app-results-grid">
-                {savedRows.map((movie) =>
-                  renderMovieCard(movie, true)
-                )}
+                {savedRows.map((movie) => renderMovieCard(movie, true))}
               </div>
             ) : (
               <div className="status-message">
                 <Bookmark size={24} />
                 <p>Your list is empty.</p>
-                <p>
-                  Add movies and shows using the My List button.
-                </p>
+                <p>Add movies and shows using the My List button.</p>
 
                 <button
                   type="button"
@@ -821,13 +812,9 @@ function App() {
           <section className="app-results page-container">
             <div className="genre-page-heading">
               <div>
-                <p className="app-page-subtitle">
-                  EXPLORE BY GENRE
-                </p>
+                <p className="app-page-subtitle">EXPLORE BY GENRE</p>
 
-                <h1 className="app-page-title">
-                  {genreTitle} Movies
-                </h1>
+                <h1 className="app-page-title">{genreTitle} Movies</h1>
               </div>
 
               <button
@@ -868,9 +855,7 @@ function App() {
             ) : genreResults.length > 0 ? (
               <>
                 <div className="app-results-grid">
-                  {genreResults.map((movie) =>
-                    renderMovieCard(movie)
-                  )}
+                  {genreResults.map((movie) => renderMovieCard(movie))}
                 </div>
 
                 {genreHasMore && (
@@ -879,9 +864,7 @@ function App() {
                       type="button"
                       className="primary-button"
                       disabled={genreLoadingMore}
-                      onClick={() =>
-                        setGenrePage((page) => page + 1)
-                      }
+                      onClick={() => setGenrePage((page) => page + 1)}
                     >
                       {genreLoadingMore ? (
                         <>
@@ -905,18 +888,16 @@ function App() {
           <>
             {activePage !== "Home" && (
               <section className="page-container app-section-heading">
-                <h1 className="app-page-title">
-                  {activePage}
-                </h1>
+                <h1 className="app-page-title">{activePage}</h1>
 
                 <p className="app-page-subtitle">
                   {activePage === "Movies"
                     ? "Explore movies by popularity, rating, and genre."
                     : activePage === "TV Shows"
-                    ? "Discover popular and highly rated television shows."
-                    : activePage === "New & Popular"
-                    ? "Discover trending titles, new releases, and movies in theaters."
-                    : ""}
+                      ? "Discover popular and highly rated television shows."
+                      : activePage === "New & Popular"
+                        ? "Discover trending titles, new releases, and movies in theaters."
+                        : ""}
                 </p>
               </section>
             )}
@@ -936,8 +917,8 @@ function App() {
               ))
             ) : (
               <div className="status-message">
-                No content is configured for this page yet.
-                Check your requests.js configuration.
+                No content is configured for this page yet. Check your
+                requests.js configuration.
               </div>
             )}
           </>
@@ -992,9 +973,7 @@ function App() {
             )}
 
             <div className="title-modal-body">
-              <p className="title-modal-kicker">
-                STREAMFLIX TITLE
-              </p>
+              <p className="title-modal-kicker">STREAMFLIX TITLE</p>
 
               <h2>{getTitle(selectedMovie)}</h2>
 
@@ -1010,8 +989,7 @@ function App() {
                   selectedMovie.first_air_date) && (
                   <span>
                     {(
-                      selectedMovie.release_date ||
-                      selectedMovie.first_air_date
+                      selectedMovie.release_date || selectedMovie.first_air_date
                     ).slice(0, 4)}
                   </span>
                 )}
@@ -1032,9 +1010,7 @@ function App() {
               )}
 
               {trailerError && (
-                <p className="title-modal-note">
-                  {trailerError}
-                </p>
+                <p className="title-modal-note">{trailerError}</p>
               )}
 
               <div className="title-modal-actions">
@@ -1059,9 +1035,7 @@ function App() {
                     <Plus size={18} />
                   )}
 
-                  {isInList(selectedMovie)
-                    ? "In My List"
-                    : "My List"}
+                  {isInList(selectedMovie) ? "In My List" : "My List"}
                 </button>
               </div>
             </div>
