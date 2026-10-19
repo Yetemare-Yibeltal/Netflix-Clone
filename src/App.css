@@ -244,3 +244,49 @@
     flex-direction: column;
   }
 }
+.movie-card {
+  position: relative;
+}
+
+.movie-card-image-button {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+}
+
+.movie-card-overlay {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.movie-card-actions {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.movie-action {
+  position: relative;
+  z-index: 6;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.movie-action svg {
+  pointer-events: none;
+}
+
+.movie-card-image-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
