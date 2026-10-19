@@ -1,6 +1,169 @@
-*{
-  margin:0;
+.App {
+  min-height: 100vh;
+  overflow: clip;
+  background: var(--color-background);
 }
-.App{
-  background-color: #111;
+
+.app-main {
+  min-height: 100vh;
+  padding-bottom: 4rem;
+}
+
+.page-container {
+  width: 100%;
+  padding-inline: var(--page-padding);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  color: var(--color-text);
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  transition: background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.primary-button {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.primary-button:hover {
+  background: var(--color-primary-hover);
+}
+
+.secondary-button {
+  background: rgba(109, 109, 110, 0.72);
+  color: #fff;
+}
+
+.secondary-button:hover {
+  background: rgba(109, 109, 110, 0.48);
+}
+
+.primary-button:active,
+.secondary-button:active {
+  transform: scale(0.98);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.status-message {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.error-message {
+  color: #ff9a9a;
+}
+
+.loading-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-rotation 0.75s linear infinite;
+}
+
+@keyframes spinner-rotation {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.modal-content {
+  position: relative;
+  width: min(100%, 760px);
+  max-height: min(85vh, 900px);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.modal-close {
+  position: absolute;
+  z-index: 2;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  background: #181818;
+  color: #fff;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  background: #333;
+}
+
+@media (max-width: 600px) {
+  .app-main {
+    padding-bottom: 2rem;
+  }
+
+  .status-message {
+    min-height: 140px;
+    padding: 1.25rem;
+  }
+
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .modal-content {
+    max-height: 92vh;
+  }
 }
