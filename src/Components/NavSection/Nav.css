@@ -220,3 +220,42 @@
     height: 42px;
   }
 }
+.nav-genres {
+  display: flex;
+  align-items: center;
+}
+
+.nav-genres label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nav-genres select {
+  max-width: 115px;
+  padding: 0.45rem 0.3rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #ddd;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.nav-genres select:focus-visible {
+  border-color: #fff;
+}
+
+.nav-genres option {
+  background: #181818;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .nav-genres select {
+    max-width: 85px;
+    font-size: 0.72rem;
+  }
+}
