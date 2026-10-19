@@ -1,32 +1,32 @@
 import axios from "axios";
 
-const apiKey = process.env.REACT_APP_TMDB_API_KEY;
+const apiKey = process.env.REACT_APP_TMDB_API_KEY?.trim();
 
 const instance = axios.create({
   baseURL: "https://api.themoviedb.org/3",
   timeout: 15000,
-  headers: {
-    Accept: "application/json",
+  params: {
+    language: "en-US",
+    ...(apiKey ? { api_key: apiKey } : {}),
   },
-  params: apiKey
-    ? {
-        api_key: apiKey,
-        language: "en-US",
-      }
-    : {},
 });
 
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.code === "ECONNABORTED") {
-      console.error("TMDB request timed out. Please try again.");
-    } else if (error.response) {
+    if (!apiKey) {
       console.error(
-        `TMDB request failed with status ${error.response.status}.`,
+        "TMDB API key is missing. Check client/.env and restart the development server.",
+      );
+    } else if (error.response?.status === 401) {
+      console.error(
+        "TMDB authentication failed. Verify that REACT_APP_TMDB_API_KEY contains a valid TMDB v3 API key.",
       );
     } else {
-      console.error("Unable to reach TMDB. Check your internet connection.");
+      console.error(
+        "TMDB request failed:",
+        error.response?.status || error.message,
+      );
     }
 
     return Promise.reject(error);
