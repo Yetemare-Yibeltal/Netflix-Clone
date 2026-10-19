@@ -64,7 +64,7 @@ function MovieImage({ movie, isLargeRow, title }) {
 
   useEffect(() => {
     setSrc(getImage(movie, isLargeRow));
-  }, [movie?.poster_path, movie?.backdrop_path, isLargeRow]);
+  }, [movie, isLargeRow]);
 
   return (
     <img
